@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hourline – World Clock and Time Zone Planner</title>
+  <meta name="description" content="See the current local time in cities around the world, compare time differences, and find a good time to call across time zones.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/ad-config.js"></script>
+  <script src="/ads.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#clocks">Skip to clocks</a>
+
+  <div class="ad-band">
+    <div class="ad" data-ad="top" data-size="728x90" data-size-sm="320x100"></div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="/">Hourline</a>
+    <nav aria-label="Site">
+      <a href="/about.html">About</a>
+      <a href="/about.html#advertise">Advertise</a>
+    </nav>
+  </header>
+
+  <div class="page">
+    <aside class="rail rail-left" aria-label="Advertisement">
+      <div class="ad" data-ad="railLeft" data-size="160x600"></div>
+    </aside>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="your-time">
+        <p class="hero-label" id="your-time">Your time in <span id="home-name">your city</span></p>
+        <p class="hero-clock" id="home-clock" aria-live="off">--:--</p>
+        <p class="hero-date" id="home-date"></p>
+
+        <div class="shift">
+          <label for="shift">Shift every clock to plan a call</label>
+          <input type="range" id="shift" min="-720" max="720" step="15" value="0" aria-describedby="shift-out">
+          <div class="shift-row">
+            <output id="shift-out" for="shift">Showing the time now</output>
+            <button type="button" class="link-btn" id="shift-reset" hidden>Back to now</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="clocks" id="clocks" aria-labelledby="clocks-title">
+        <div class="clocks-head">
+          <h1 id="clocks-title">World clock</h1>
+          <div class="tools">
+            <button type="button" class="toggle" id="hour-format" aria-pressed="false">24-hour</button>
+            <button type="button" class="link-btn" id="reset-list">Reset cities</button>
+          </div>
+        </div>
+
+        <form class="add" id="add-form" autocomplete="off">
+          <label for="add-input">Add a city</label>
+          <div class="add-row">
+            <input id="add-input" list="city-options" placeholder="Start typing, e.g. Nairobi" required>
+            <button type="submit">Add city</button>
+          </div>
+          <datalist id="city-options"></datalist>
+          <p class="add-msg" id="add-msg" role="status"></p>
+        </form>
+
+        <ol class="city-list" id="city-list"></ol>
+        <p class="legend">Row colours follow the sky at each city's local hour, from night through dawn, day and dusk.</p>
+      </section>
+
+      <section class="tiles" aria-label="Advertisements">
+        <div class="ad" data-ad="tile1" data-size="300x250"></div>
+        <div class="ad" data-ad="tile2" data-size="300x250"></div>
+        <div class="ad" data-ad="tile3" data-size="300x250"></div>
+      </section>
+
+      <article class="guide">
+        <h2>Using Hourline to plan across time zones</h2>
+        <p>Every row shows a city's local time right now, how far ahead or behind you it is, and whether it is already tomorrow or still yesterday there. Cities are listed from the furthest west to the furthest east, so you can read the list like a map of the day moving around the planet.</p>
+        <p>To find a meeting time, drag the slider under your clock. Every city moves with it. When the rows you care about are all in daytime blue, you have found a time that works for everyone.</p>
+
+        <div class="ad ad-inline" data-ad="article" data-size="336x280" data-size-sm="300x250"></div>
+
+        <h2>Daylight saving time</h2>
+        <p>Many countries move their clocks forward one hour in spring and back in autumn, but they do not all change on the same date. The northern and southern hemispheres change in opposite directions, and many places near the equator never change at all. Hourline uses your browser's time zone database, so clocks update for daylight saving automatically.</p>
+
+        <h2>Questions</h2>
+        <details>
+          <summary>Why do some cities show half-hour differences?</summary>
+          <p>Some time zones are offset from UTC by 30 or 45 minutes. India runs at UTC+5:30, Nepal at UTC+5:45, and Newfoundland in Canada at UTC−3:30.</p>
+        </details>
+        <details>
+          <summary>Where is my city list saved?</summary>
+          <p>Only in this browser on this device. Nothing about your list is sent to us. Clearing your browser data resets it to the default cities.</p>
+        </details>
+        <details>
+          <summary>How accurate are the clocks?</summary>
+          <p>They use your device's clock. If your device time is wrong, every city will be off by the same amount.</p>
+        </details>
+      </article>
+
+      <div class="ad-band ad-band-bottom">
+        <div class="ad" data-ad="bottom" data-size="728x90" data-size-sm="320x100"></div>
+      </div>
+    </main>
+
+    <aside class="rail rail-right" aria-label="Advertisement">
+      <div class="ad" data-ad="railRight" data-size="300x600"></div>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <p>Hourline shows local times using your browser's time zone data.</p>
+    <nav aria-label="Footer">
+      <a href="/about.html">About</a>
+      <a href="/about.html#advertise">Advertise</a>
+      <a href="/privacy.html">Privacy policy</a>
+    </nav>
+  </footer>
+</body>
+</html>
