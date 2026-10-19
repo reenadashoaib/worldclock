@@ -188,9 +188,32 @@
     return SKY[0].slice(1);
   }
 
-  function isDarkColor(rgb) {
-    var lum = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
-    return lum < 0.55;
+  var LIGHT_TEXT = [255, 255, 255];
+  var DARK_TEXT = [16, 24, 44];
+
+  function luminance(rgb) {
+    var c = rgb.map(function (v) {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+
+  function contrast(a, b) {
+    var x = luminance(a);
+    var y = luminance(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  }
+
+  // Picks the text colour that reads best on a sky colour. Twilight mid-tones are nudged
+  // darker or lighter until the text passes 4.5:1.
+  function readableSky(rgb) {
+    var light = contrast(LIGHT_TEXT, rgb) >= contrast(DARK_TEXT, rgb);
+    var bg = rgb.slice();
+    for (var i = 0; i < 24 && contrast(light ? LIGHT_TEXT : DARK_TEXT, bg) < 4.6; i++) {
+      bg = bg.map(function (v) { return Math.round(light ? v * 0.94 : v + (255 - v) * 0.08); });
+    }
+    return { bg: bg, dark: light };
   }
 
   // ---------- State ----------
@@ -232,6 +255,7 @@
   var shiftEl = document.getElementById("shift");
   var shiftOutEl = document.getElementById("shift-out");
   var shiftResetEl = document.getElementById("shift-reset");
+  var shiftScaleEls = document.querySelectorAll("#shift-scale span");
   var formatBtn = document.getElementById("hour-format");
   var resetBtn = document.getElementById("reset-list");
   var form = document.getElementById("add-form");
@@ -289,7 +313,7 @@
       var remove = document.createElement("button");
       remove.type = "button";
       remove.className = "city-remove";
-      remove.textContent = "×";
+      remove.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
       remove.setAttribute("aria-label", "Remove " + city.name);
       remove.addEventListener("click", function () { removeCity(city.name); });
       li.appendChild(remove);
@@ -372,15 +396,41 @@
     }
 
     r.where.textContent = (r.city.country ? r.city.country + " " : "") + zoneAbbr(r.city.tz, at);
-    r.diff.textContent = off === homeOffset ? "same time as you" : formatDiff(off - homeOffset) + " from you";
+    var d = off - homeOffset;
+    r.diff.textContent = d === 0 ? "same time as you" : formatDiff(Math.abs(d)).slice(1) + (d > 0 ? " ahead" : " behind");
     r.day.textContent = dayDiff > 0 ? "tomorrow" : dayDiff < 0 ? "yesterday" : "today";
 
-    var rgb = skyColor(p.hour + p.minute / 60);
-    r.el.style.setProperty("--sky", "rgb(" + rgb.join(",") + ")");
-    r.el.classList.toggle("is-dark", isDarkColor(rgb));
+    var sky = readableSky(skyColor(p.hour + p.minute / 60));
+    r.el.style.setProperty("--sky", "rgb(" + sky.bg.join(",") + ")");
+    r.el.classList.toggle("is-dark", sky.dark);
+  }
+
+  // Paints the slider track with your next and previous 12 hours of sky, and labels it.
+  var bandKey = "";
+  function updateDayBand() {
+    var now = new Date();
+    var p = partsAt(homeTz, now);
+    var key = p.hour + ":" + p.minute + ":" + use24;
+    if (key === bandKey) return;
+    bandKey = key;
+
+    var nowHour = p.hour + p.minute / 60;
+    var stops = [];
+    for (var k = 0; k <= 48; k++) {
+      var hour = (((nowHour - 12 + k / 2) % 24) + 24) % 24;
+      stops.push("rgb(" + skyColor(hour).join(",") + ") " + (k / 48 * 100).toFixed(2) + "%");
+    }
+    shiftEl.style.setProperty("--day-band", "linear-gradient(90deg, " + stops.join(", ") + ")");
+
+    [-12, -6, 0, 6, 12].forEach(function (h, i) {
+      var q = partsAt(homeTz, new Date(now.getTime() + h * 3600000));
+      var t = hourText(q.hour, use24);
+      shiftScaleEls[i].textContent = h === 0 ? "Now" : t.hh + ":" + pad(q.minute) + (t.suffix ? " " + t.suffix : "");
+    });
   }
 
   function tick() {
+    updateDayBand();
     var at = new Date(Date.now() + shiftMinutes * 60000);
     updateHero(at);
     var homeOffset = offsetMinutes(homeTz, at);

@@ -43,6 +43,9 @@
         <div class="shift">
           <label for="shift">Shift every clock to plan a call</label>
           <input type="range" id="shift" min="-720" max="720" step="15" value="0" aria-describedby="shift-out">
+          <div class="shift-scale" id="shift-scale" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
           <div class="shift-row">
             <output id="shift-out" for="shift">Showing the time now</output>
             <button type="button" class="link-btn" id="shift-reset" hidden>Back to now</button>

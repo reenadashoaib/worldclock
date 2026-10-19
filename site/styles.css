@@ -209,11 +209,58 @@ main { min-width: 0; }
   font-weight: 600;
   margin-bottom: 6px;
 }
+/* The slider track is your day: 12 hours back to 12 hours ahead, in sky colours. */
 .shift input[type="range"] {
+  --day-band: linear-gradient(90deg, #1f2747, #cfe4f5, #1f2747);
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
   width: 100%;
-  accent-color: var(--ink);
-  min-height: 32px;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
 }
+.shift input[type="range"]::-webkit-slider-runnable-track {
+  height: 28px;
+  border-radius: 6px;
+  background: var(--day-band);
+}
+.shift input[type="range"]::-moz-range-track {
+  height: 28px;
+  border-radius: 6px;
+  background: var(--day-band);
+}
+.shift input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 44px;
+  margin-top: -8px;
+  border-radius: 4px;
+  background: var(--ink);
+  border: 2px solid var(--paper);
+}
+.shift input[type="range"]::-moz-range-thumb {
+  width: 4px;
+  height: 40px;
+  border-radius: 4px;
+  background: var(--ink);
+  border: 2px solid var(--paper);
+}
+.shift input[type="range"]:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 4px;
+}
+.shift-scale {
+  display: flex;
+  justify-content: space-between;
+  margin: 2px 0 10px;
+  font-size: var(--step--1);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.shift-scale span:nth-child(3) { color: var(--ink); font-weight: 600; }
 .shift-row {
   display: flex;
   flex-wrap: wrap;
@@ -256,8 +303,8 @@ main { min-width: 0; }
   background: var(--surface);
   color: var(--ink);
   border-radius: 999px;
-  padding: 6px 14px;
-  min-height: 36px;
+  padding: 6px 16px;
+  min-height: 44px;
 }
 .toggle[aria-pressed="true"] {
   background: var(--ink);
@@ -283,6 +330,7 @@ main { min-width: 0; }
   min-width: 0;
   font: inherit;
   padding: 10px 12px;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -314,26 +362,23 @@ main { min-width: 0; }
 
 .city {
   --sky: #cfe4f5;
-  --fg: #18223a;
-  --fg-soft: rgba(24, 34, 58, 0.72);
+  --fg: #10182c;
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 4px 16px;
-  padding: 14px 52px 14px 20px;
+  padding: 14px 60px 14px 20px;
   background: var(--sky);
   color: var(--fg);
-  transition: background-color 600ms linear;
 }
 .city.is-dark {
-  --fg: #f4f6fb;
-  --fg-soft: rgba(244, 246, 251, 0.78);
+  --fg: #ffffff;
 }
+.city :focus-visible { outline-color: currentColor; }
 .city.is-home .city-name::after {
   content: " (you)";
   font-weight: 400;
-  color: var(--fg-soft);
 }
 
 .city-name {
@@ -345,7 +390,7 @@ main { min-width: 0; }
 .city-meta {
   margin: 2px 0 0;
   font-size: var(--step--1);
-  color: var(--fg-soft);
+  font-weight: 500;
 }
 .city-meta span + span::before {
   content: ", ";
@@ -368,19 +413,20 @@ main { min-width: 0; }
 
 .city-remove {
   position: absolute;
-  right: 10px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
   border-radius: 50%;
   border: 0;
   background: transparent;
-  color: var(--fg-soft);
-  font-size: 1.25rem;
-  line-height: 1;
+  color: var(--fg);
+  opacity: 0.8;
 }
-.city-remove:hover { background: rgba(127, 127, 127, 0.18); color: var(--fg); }
+.city-remove:hover { background: rgba(127, 127, 127, 0.22); opacity: 1; }
 
 .list-ad {
   background: var(--ad-bg);
@@ -405,6 +451,17 @@ main { min-width: 0; }
 .ad {
   margin: 0 auto;
   max-width: 100%;
+}
+
+/* Reserve each space's height (ad + label) before it loads, so the page does not jump. */
+.ad[data-size="728x90"] { min-height: 109px; }
+.ad[data-size="300x250"] { min-height: 269px; }
+.ad[data-size="336x280"] { min-height: 299px; }
+.ad[data-size="160x600"],
+.ad[data-size="300x600"] { min-height: 619px; }
+@media (max-width: 767px) {
+  .ad[data-size-sm="320x100"] { min-height: 119px; }
+  .ad[data-size-sm="300x250"] { min-height: 269px; }
 }
 
 .ad-label {
@@ -581,10 +638,6 @@ body.no-scroll { overflow: hidden; }
   text-align: left;
   padding: 8px 12px 8px 0;
   border-bottom: 1px solid var(--line);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .city { transition: none; }
 }
 
 @media print {
