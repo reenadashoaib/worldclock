@@ -156,10 +156,211 @@ main { min-width: 0; }
   top: 16px;
 }
 
+/* ---------- City search ---------- */
+
+.search {
+  padding: 24px 0 8px;
+  max-width: 720px;
+}
+
+.search-label {
+  display: block;
+  font-size: var(--step-2);
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.search-box input {
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 16px 12px 50px;
+  font: inherit;
+  font-size: var(--step-1);
+  color: var(--ink);
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+}
+.search-box input::placeholder { color: var(--muted); }
+.search-box input:focus-visible { outline-offset: 3px; }
+.search-box input::-webkit-search-cancel-button { cursor: pointer; }
+
+.search-results {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(16, 24, 48, 0.16);
+  max-height: min(60vh, 440px);
+  overflow-y: auto;
+}
+
+.search-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "name time" "place time";
+  align-items: center;
+  column-gap: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 48px;
+}
+.search-option:hover,
+.search-option[aria-selected="true"] { background: var(--ad-bg); }
+.option-name { grid-area: name; font-weight: 600; }
+.option-place { grid-area: place; font-size: var(--step--1); color: var(--muted); }
+.option-time {
+  grid-area: time;
+  font-family: var(--font-clock);
+  font-weight: 800;
+  font-size: var(--step-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.search-msg {
+  min-height: 1.5em;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: var(--step--1);
+}
+
+/* The result card takes the sky colour of the city's hour, like the clock rows. */
+.search-card {
+  --sky: #cfe4f5;
+  --fg: #10182c;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "info clock" "actions actions";
+  gap: 16px 24px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 20px 24px;
+  border-radius: 14px;
+  background: var(--sky);
+  color: var(--fg);
+}
+.search-card[hidden] { display: none; }
+.search-card.is-dark { --fg: #ffffff; }
+.search-card :focus-visible { outline-color: currentColor; }
+
+.card-info { grid-area: info; min-width: 0; }
+.card-name { font-size: var(--step-3); font-weight: 600; }
+.card-place,
+.card-date,
+.card-rel { margin: 2px 0 0; }
+.card-place { font-weight: 500; }
+.card-rel { font-weight: 600; margin-top: 8px; }
+
+.card-clock {
+  grid-area: clock;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.card-clock .dial { width: 96px; }
+.card-time {
+  margin: 0;
+  font-family: var(--font-clock);
+  font-weight: 800;
+  font-size: clamp(3rem, 9vw, 4.5rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.card-time small { font-size: 0.42em; font-weight: 600; margin-left: 0.15em; }
+
+.card-actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.card-actions button {
+  min-height: 44px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.card-add {
+  border: 0;
+  background: var(--fg);
+  color: var(--sky);
+}
+.card-add:disabled {
+  cursor: default;
+  background: transparent;
+  color: var(--fg);
+  border: 2px solid currentColor;
+}
+.card-close {
+  border: 2px solid currentColor;
+  background: transparent;
+  color: var(--fg);
+}
+
+@media (max-width: 599px) {
+  .search-card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "info" "clock" "actions";
+    padding: 18px;
+  }
+  .card-clock .dial { width: 80px; }
+}
+
+/* ---------- Analog clock ---------- */
+
+.dial {
+  --dial-face: #cfe4f5;
+  --hand: #10182c;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.dial.is-dark { --hand: #ffffff; }
+.dial-face { fill: var(--dial-face); stroke: var(--line); stroke-width: 1.5; }
+.dial-tick { stroke: var(--hand); stroke-width: 2; stroke-linecap: round; opacity: 0.7; }
+.dial-tick-major { stroke-width: 3.5; opacity: 1; }
+.dial-hand { stroke: var(--hand); stroke-linecap: round; }
+.dial-hour { stroke-width: 6; }
+.dial-minute { stroke-width: 4; }
+.dial-second { stroke: var(--hand); stroke-width: 1.5; stroke-linecap: round; opacity: 0.85; }
+.dial-pin { fill: var(--hand); }
+
 /* ---------- Hero ---------- */
 
 .hero {
   padding: 24px 0 32px;
+}
+
+.hero-time {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 4vw, 48px);
+}
+.hero-dial {
+  flex: none;
+  width: clamp(84px, 18vw, 176px);
 }
 
 .hero-label {
@@ -312,42 +513,9 @@ main { min-width: 0; }
   border-color: var(--ink);
 }
 
-.add {
-  margin: 16px 0 20px;
-  max-width: 560px;
-}
-.add label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-.add-row {
-  display: flex;
-  gap: 8px;
-}
-.add input {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  padding: 10px 12px;
-  min-height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink);
-}
-.add button {
-  border: 0;
-  border-radius: 8px;
-  background: var(--ink);
-  color: var(--paper);
-  padding: 10px 16px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.add-msg {
+.list-msg {
   min-height: 1.5em;
-  margin: 6px 0 0;
+  margin: 8px 0 16px;
   color: var(--muted);
   font-size: var(--step--1);
 }

@@ -9,6 +9,19 @@ python3 -m http.server 8787 -d site
 # open http://localhost:8787
 ```
 
+## City search
+
+The search bar covers every city and town with 15,000 or more people (about 34,000 places). The list lives in `site/data/cities.json` (about 290 KB compressed), and the page only downloads it when someone starts using the search. Until it arrives, search falls back to the 75 cities built into `app.js`.
+
+The data comes from [GeoNames](https://www.geonames.org/) under CC BY 4.0. That licence requires the credit line in every page footer, so keep it.
+
+To rebuild the list, for example to add another nickname to `OTHER_NAMES` in the script:
+
+```sh
+pip download --no-deps geonamescache -d /tmp/gnc && unzip -o /tmp/gnc/*.whl -d /tmp/gnc/x
+python3 tools/build-cities.py /tmp/gnc/x/geonamescache/data
+```
+
 ## Ad spaces
 
 | Space | Key in `ad-config.js` | Size |

@@ -216,26 +216,60 @@
     return { bg: bg, dark: light };
   }
 
-  // ---------- State ----------
+  // ---------- Cities ----------
+
+  // A city is { name, region, country, tz }. Its id tells apart places that share a name.
+  function cityId(c) {
+    return fold(c.name + "|" + (c.region || "") + "|" + (c.country || ""));
+  }
+
+  function cityPlace(c) {
+    return [c.region, c.country].filter(Boolean).join(", ");
+  }
 
   var cities = CITIES
     .filter(function (c) { return zoneIsSupported(c[2]); })
-    .map(function (c) { return { name: c[0], country: c[1], tz: c[2] }; });
+    .map(function (c) { return { name: c[0], region: "", country: c[1], tz: c[2] }; });
   var byName = {};
   cities.forEach(function (c) { byName[fold(c.name)] = c; });
 
   var homeTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   var homeCity = cities.filter(function (c) { return c.tz === homeTz; })[0] || {
     name: homeTz.split("/").pop().replace(/_/g, " "),
+    region: "",
     country: "",
     tz: homeTz
   };
 
+  // Saved lists hold city names (older visits and the defaults) or full city objects
+  // (cities added from search).
+  function resolveSaved(entry) {
+    if (typeof entry === "string") return byName[fold(entry)] || null;
+    if (entry && typeof entry.name === "string" && typeof entry.tz === "string" && zoneIsSupported(entry.tz)) {
+      return {
+        name: entry.name,
+        region: typeof entry.region === "string" ? entry.region : "",
+        country: typeof entry.country === "string" ? entry.country : "",
+        tz: entry.tz
+      };
+    }
+    return null;
+  }
+
+  function defaultCities() {
+    return DEFAULT_CITIES.map(resolveSaved).filter(Boolean);
+  }
+
   function loadChosen() {
     var saved = null;
     try { saved = JSON.parse(storageGet(STORE_CITIES)); } catch (e) { saved = null; }
-    var names = Array.isArray(saved) ? saved : DEFAULT_CITIES;
-    return names.filter(function (n) { return byName[fold(n)]; });
+    if (!Array.isArray(saved)) return defaultCities();
+    var seen = {};
+    return saved.map(resolveSaved).filter(function (c) {
+      if (!c || seen[cityId(c)]) return false;
+      seen[cityId(c)] = true;
+      return true;
+    });
   }
 
   var chosen = loadChosen();
@@ -246,30 +280,83 @@
     ? /^h2/.test(new Intl.DateTimeFormat(undefined, { hour: "numeric" }).resolvedOptions().hourCycle || "h23")
     : savedHours === "1";
 
+  function isOnList(city) {
+    var id = cityId(city);
+    return id === cityId(homeCity) || chosen.some(function (c) { return cityId(c) === id; });
+  }
+
   // ---------- Elements ----------
 
   var listEl = document.getElementById("city-list");
   var homeNameEl = document.getElementById("home-name");
   var homeClockEl = document.getElementById("home-clock");
   var homeDateEl = document.getElementById("home-date");
+  var homeDialEl = document.getElementById("home-dial");
   var shiftEl = document.getElementById("shift");
   var shiftOutEl = document.getElementById("shift-out");
   var shiftResetEl = document.getElementById("shift-reset");
   var shiftScaleEls = document.querySelectorAll("#shift-scale span");
   var formatBtn = document.getElementById("hour-format");
   var resetBtn = document.getElementById("reset-list");
-  var form = document.getElementById("add-form");
-  var input = document.getElementById("add-input");
-  var msg = document.getElementById("add-msg");
-  var options = document.getElementById("city-options");
+  var listMsg = document.getElementById("list-msg");
+  var searchForm = document.getElementById("search-form");
+  var searchInput = document.getElementById("city-search");
+  var resultsEl = document.getElementById("search-results");
+  var searchMsg = document.getElementById("search-msg");
+  var cardEl = document.getElementById("search-card");
 
   homeNameEl.textContent = homeCity.name;
 
-  cities.forEach(function (c) {
-    var opt = document.createElement("option");
-    opt.value = c.name + ", " + c.country;
-    options.appendChild(opt);
-  });
+  // ---------- Analog clock ----------
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS(SVG_NS, tag);
+    Object.keys(attrs).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+    return el;
+  }
+
+  // The dial is filled with the sky colour of the hour it shows, like the city rows.
+  function makeDial() {
+    var svg = svgEl("svg", { viewBox: "0 0 100 100", "class": "dial", "aria-hidden": "true", focusable: "false" });
+    svg.appendChild(svgEl("circle", { cx: 50, cy: 50, r: 48, "class": "dial-face" }));
+    for (var i = 0; i < 12; i++) {
+      var quarter = i % 3 === 0;
+      svg.appendChild(svgEl("line", {
+        x1: 50, y1: quarter ? 7 : 8, x2: 50, y2: quarter ? 17 : 13,
+        "class": quarter ? "dial-tick dial-tick-major" : "dial-tick",
+        transform: "rotate(" + i * 30 + " 50 50)"
+      }));
+    }
+    var hour = svgEl("line", { x1: 50, y1: 54, x2: 50, y2: 27, "class": "dial-hand dial-hour" });
+    var minute = svgEl("line", { x1: 50, y1: 56, x2: 50, y2: 15, "class": "dial-hand dial-minute" });
+    var second = svgEl("line", { x1: 50, y1: 60, x2: 50, y2: 11, "class": "dial-second" });
+    svg.appendChild(hour);
+    svg.appendChild(minute);
+    svg.appendChild(second);
+    svg.appendChild(svgEl("circle", { cx: 50, cy: 50, r: 3, "class": "dial-pin" }));
+
+    return {
+      el: svg,
+      set: function (p, sky) {
+        hour.setAttribute("transform", "rotate(" + ((p.hour % 12) + p.minute / 60) * 30 + " 50 50)");
+        minute.setAttribute("transform", "rotate(" + (p.minute + p.second / 60) * 6 + " 50 50)");
+        second.setAttribute("transform", "rotate(" + p.second * 6 + " 50 50)");
+        svg.style.setProperty("--dial-face", "rgb(" + sky.bg.join(",") + ")");
+        svg.classList.toggle("is-dark", sky.dark);
+      }
+    };
+  }
+
+  var homeDial = makeDial();
+  homeDialEl.appendChild(homeDial.el);
+
+  function skyAt(p) {
+    return readableSky(skyColor(p.hour + p.minute / 60));
+  }
+
+  // ---------- Clock list ----------
 
   // The in-list ad stays in place while rows are added around it, so the ad never reloads.
   var listAd = document.createElement("li");
@@ -315,7 +402,7 @@
       remove.className = "city-remove";
       remove.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
       remove.setAttribute("aria-label", "Remove " + city.name);
-      remove.addEventListener("click", function () { removeCity(city.name); });
+      remove.addEventListener("click", function () { removeCity(city); });
       li.appendChild(remove);
     }
 
@@ -326,15 +413,15 @@
     rows.forEach(function (r) { r.el.remove(); });
 
     var now = new Date();
-    var list = chosen.map(function (n) { return byName[fold(n)]; });
-    var hasHome = list.some(function (c) { return c.tz === homeTz && c.name === homeCity.name; });
-    if (!hasHome) list.push(homeCity);
+    var list = chosen.slice();
+    var homeId = cityId(homeCity);
+    if (!list.some(function (c) { return cityId(c) === homeId; })) list.push(homeCity);
 
     list.sort(function (a, b) {
       return offsetMinutes(a.tz, now) - offsetMinutes(b.tz, now) || a.name.localeCompare(b.name);
     });
 
-    rows = list.map(function (c) { return buildRow(c, c === homeCity); });
+    rows = list.map(function (c) { return buildRow(c, cityId(c) === homeId); });
 
     var adAt = Math.min(IN_LIST_AD_AFTER, rows.length);
     rows.forEach(function (r, i) {
@@ -350,11 +437,21 @@
     storageSet(STORE_CITIES, JSON.stringify(chosen));
   }
 
-  function removeCity(name) {
-    chosen = chosen.filter(function (n) { return fold(n) !== fold(name); });
+  function addCity(city) {
+    if (isOnList(city)) return false;
+    chosen.push(city);
     save();
     render();
-    msg.textContent = name + " removed.";
+    return true;
+  }
+
+  function removeCity(city) {
+    var id = cityId(city);
+    chosen = chosen.filter(function (c) { return cityId(c) !== id; });
+    save();
+    render();
+    listMsg.textContent = city.name + " removed.";
+    if (card && cityId(card.city) === id) updateCardButton();
   }
 
   // ---------- Clock updates ----------
@@ -363,6 +460,31 @@
 
   function digits(text) {
     return text.split("").map(function (ch) { return '<span class="d">' + ch + "</span>"; }).join("");
+  }
+
+  function timeText(p) {
+    var h = hourText(p.hour, use24);
+    return h.hh + ":" + pad(p.minute) + (h.suffix ? " " + h.suffix : "");
+  }
+
+  function setTimeEl(el, p) {
+    var h = hourText(p.hour, use24);
+    el.innerHTML = "";
+    el.appendChild(document.createTextNode(h.hh + ":" + pad(p.minute)));
+    if (h.suffix) {
+      var s = document.createElement("small");
+      s.textContent = h.suffix;
+      el.appendChild(s);
+    }
+  }
+
+  function relativeText(city, at, homeOffset, homeDay) {
+    var d = offsetMinutes(city.tz, at) - homeOffset;
+    var dayDiff = Math.sign(dateKey(partsAt(city.tz, at)) - homeDay);
+    return {
+      diff: d === 0 ? "same time as you" : formatDiff(Math.abs(d)).slice(1) + (d > 0 ? " ahead" : " behind"),
+      day: dayDiff > 0 ? "tomorrow" : dayDiff < 0 ? "yesterday" : "today"
+    };
   }
 
   var homeDateFormat = null;
@@ -379,28 +501,18 @@
       });
     }
     homeDateEl.textContent = homeDateFormat.format(at) + ", " + zoneAbbr(homeTz, at);
+    homeDial.set(p, skyAt(p));
   }
 
   function updateRow(r, at, homeOffset, homeDay) {
     var p = partsAt(r.city.tz, at);
-    var h = hourText(p.hour, use24);
-    var off = offsetMinutes(r.city.tz, at);
-    var dayDiff = Math.sign(dateKey(p) - homeDay);
+    var rel = relativeText(r.city, at, homeOffset, homeDay);
+    setTimeEl(r.time, p);
+    r.where.textContent = (cityPlace(r.city) ? cityPlace(r.city) + " " : "") + zoneAbbr(r.city.tz, at);
+    r.diff.textContent = rel.diff;
+    r.day.textContent = rel.day;
 
-    r.time.innerHTML = "";
-    r.time.appendChild(document.createTextNode(h.hh + ":" + pad(p.minute)));
-    if (h.suffix) {
-      var s = document.createElement("small");
-      s.textContent = h.suffix;
-      r.time.appendChild(s);
-    }
-
-    r.where.textContent = (r.city.country ? r.city.country + " " : "") + zoneAbbr(r.city.tz, at);
-    var d = off - homeOffset;
-    r.diff.textContent = d === 0 ? "same time as you" : formatDiff(Math.abs(d)).slice(1) + (d > 0 ? " ahead" : " behind");
-    r.day.textContent = dayDiff > 0 ? "tomorrow" : dayDiff < 0 ? "yesterday" : "today";
-
-    var sky = readableSky(skyColor(p.hour + p.minute / 60));
+    var sky = skyAt(p);
     r.el.style.setProperty("--sky", "rgb(" + sky.bg.join(",") + ")");
     r.el.classList.toggle("is-dark", sky.dark);
   }
@@ -424,8 +536,7 @@
 
     [-12, -6, 0, 6, 12].forEach(function (h, i) {
       var q = partsAt(homeTz, new Date(now.getTime() + h * 3600000));
-      var t = hourText(q.hour, use24);
-      shiftScaleEls[i].textContent = h === 0 ? "Now" : t.hh + ":" + pad(q.minute) + (t.suffix ? " " + t.suffix : "");
+      shiftScaleEls[i].textContent = h === 0 ? "Now" : timeText(q);
     });
   }
 
@@ -436,11 +547,290 @@
     var homeOffset = offsetMinutes(homeTz, at);
     var homeDay = dateKey(partsAt(homeTz, at));
     rows.forEach(function (r) { updateRow(r, at, homeOffset, homeDay); });
+    if (card) updateCard(at, homeOffset, homeDay);
+    if (!resultsEl.hidden) updateResultTimes(at);
   }
 
   function scheduleTick() {
     tick();
     setTimeout(scheduleTick, 1000 - (Date.now() % 1000) + 5);
+  }
+
+  // ---------- City search ----------
+
+  var MAX_RESULTS = 8;
+  var searchIndex = null;   // Every city from data/cities.json, largest first.
+  var loading = null;
+  var results = [];
+  var activeIndex = -1;
+
+  var builtInIndex = cities.map(function (c) {
+    return { city: c, key: fold(c.name), place: fold(cityPlace(c)), alts: [] };
+  });
+
+  function loadIndex() {
+    if (loading) return loading;
+    loading = fetch("/data/cities.json")
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        var zoneOk = {};
+        searchIndex = [];
+        data.cities.forEach(function (row) {
+          var tz = data.zones[row[3]];
+          if (!(tz in zoneOk)) zoneOk[tz] = zoneIsSupported(tz);
+          if (!zoneOk[tz]) return;
+          var city = { name: row[0], region: row[1], country: data.countries[row[2]], tz: tz };
+          searchIndex.push({
+            city: city,
+            key: fold(city.name),
+            place: fold(cityPlace(city)),
+            alts: row[4] ? row[4].split("|").map(fold) : []
+          });
+        });
+        if (searchInput.value.trim()) runSearch();
+      })
+      .catch(function () {
+        loading = null;
+        searchMsg.textContent = "The full city list didn't load, so search covers 75 major cities for now. Check your connection and try again.";
+      });
+    return loading;
+  }
+
+  // Ranks exact names first, then names starting with the text, then names with a word
+  // starting with it. Within a rank, bigger cities come first. "Paris, US" filters by place.
+  function search(text) {
+    var parts = fold(text).split(",");
+    var q = parts[0].trim();
+    var placeQ = parts.slice(1).join(" ").trim();
+    if (!q) return [];
+
+    var index = searchIndex || builtInIndex;
+    var buckets = [[], [], []];
+    for (var i = 0; i < index.length; i++) {
+      var item = index[i];
+      if (placeQ && item.place.indexOf(placeQ) === -1) continue;
+      var rank = -1;
+      if (item.key === q || item.alts.indexOf(q) !== -1) rank = 0;
+      else if (item.key.indexOf(q) === 0 || item.alts.some(function (a) { return a.indexOf(q) === 0; })) rank = 1;
+      else if (item.key.indexOf(" " + q) !== -1 || item.key.indexOf("-" + q) !== -1) rank = 2;
+      if (rank !== -1 && buckets[rank].length < MAX_RESULTS) buckets[rank].push(item.city);
+    }
+    return buckets[0].concat(buckets[1], buckets[2]).slice(0, MAX_RESULTS);
+  }
+
+  function setExpanded(open) {
+    resultsEl.hidden = !open;
+    searchInput.setAttribute("aria-expanded", open ? "true" : "false");
+    if (!open) {
+      activeIndex = -1;
+      searchInput.removeAttribute("aria-activedescendant");
+    }
+  }
+
+  function setActive(i) {
+    var options = resultsEl.children;
+    if (!options.length) return;
+    activeIndex = (i + options.length) % options.length;
+    for (var k = 0; k < options.length; k++) {
+      options[k].setAttribute("aria-selected", k === activeIndex ? "true" : "false");
+    }
+    searchInput.setAttribute("aria-activedescendant", options[activeIndex].id);
+    options[activeIndex].scrollIntoView({ block: "nearest" });
+  }
+
+  function runSearch() {
+    var text = searchInput.value.trim();
+    results = search(text);
+    resultsEl.innerHTML = "";
+
+    if (!text) {
+      setExpanded(false);
+      searchMsg.textContent = "";
+      return;
+    }
+
+    if (!results.length) {
+      setExpanded(false);
+      searchMsg.textContent = searchIndex || !loading
+        ? "No city matches “" + text + "”. Check the spelling, or try a larger city nearby."
+        : "Loading cities…";
+      return;
+    }
+
+    var at = new Date(Date.now() + shiftMinutes * 60000);
+    results.forEach(function (city, i) {
+      var li = document.createElement("li");
+      li.id = "search-option-" + i;
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", "false");
+      li.className = "search-option";
+
+      var name = document.createElement("span");
+      name.className = "option-name";
+      name.textContent = city.name;
+      var place = document.createElement("span");
+      place.className = "option-place";
+      place.textContent = cityPlace(city);
+      var time = document.createElement("span");
+      time.className = "option-time";
+      time.textContent = timeText(partsAt(city.tz, at));
+
+      li.appendChild(name);
+      li.appendChild(place);
+      li.appendChild(time);
+      // mousedown, not click, so choosing happens before the input loses focus.
+      li.addEventListener("mousedown", function (e) {
+        e.preventDefault();
+        choose(city);
+      });
+      resultsEl.appendChild(li);
+    });
+    searchMsg.textContent = results.length + (results.length === 1 ? " city matches." : " cities match.") + " Use the arrow keys to pick one.";
+    setExpanded(true);
+  }
+
+  function updateResultTimes(at) {
+    var spans = resultsEl.querySelectorAll(".option-time");
+    results.forEach(function (city, i) {
+      if (spans[i]) spans[i].textContent = timeText(partsAt(city.tz, at));
+    });
+  }
+
+  function choose(city) {
+    setExpanded(false);
+    searchInput.value = city.name + (cityPlace(city) ? ", " + cityPlace(city) : "");
+    searchMsg.textContent = "";
+    showCard(city);
+  }
+
+  var searchTimer = null;
+  searchInput.addEventListener("input", function () {
+    loadIndex();
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(runSearch, 80);
+  });
+  searchInput.addEventListener("focus", loadIndex);
+  searchInput.addEventListener("blur", function () { setExpanded(false); });
+
+  searchInput.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      if (resultsEl.hidden) runSearch();
+      if (!resultsEl.hidden) {
+        e.preventDefault();
+        setActive(activeIndex === -1 ? (e.key === "ArrowDown" ? 0 : -1) : activeIndex + (e.key === "ArrowDown" ? 1 : -1));
+      }
+    } else if (e.key === "Escape") {
+      if (!resultsEl.hidden) {
+        e.preventDefault();
+        setExpanded(false);
+      }
+    }
+  });
+
+  // Enter picks the highlighted city, or the best match.
+  searchForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    clearTimeout(searchTimer);
+    if (resultsEl.hidden || !results.length) runSearch();
+    if (results.length) choose(results[activeIndex >= 0 ? activeIndex : 0]);
+  });
+
+  // ---------- Search result card ----------
+
+  var card = null;
+
+  function showCard(city) {
+    cardEl.innerHTML = "";
+
+    var info = document.createElement("div");
+    info.className = "card-info";
+    var name = document.createElement("h2");
+    name.className = "card-name";
+    name.textContent = city.name;
+    var place = document.createElement("p");
+    place.className = "card-place";
+    var date = document.createElement("p");
+    date.className = "card-date";
+    var rel = document.createElement("p");
+    rel.className = "card-rel";
+    info.appendChild(name);
+    info.appendChild(place);
+    info.appendChild(date);
+    info.appendChild(rel);
+
+    var timeWrap = document.createElement("div");
+    timeWrap.className = "card-clock";
+    var time = document.createElement("p");
+    time.className = "card-time";
+    var dial = makeDial();
+    timeWrap.appendChild(dial.el);
+    timeWrap.appendChild(time);
+
+    var actions = document.createElement("div");
+    actions.className = "card-actions";
+    var add = document.createElement("button");
+    add.type = "button";
+    add.className = "card-add";
+    add.addEventListener("click", function () {
+      if (addCity(city)) {
+        listMsg.textContent = city.name + " added to your clocks.";
+        updateCardButton();
+      }
+    });
+    var close = document.createElement("button");
+    close.type = "button";
+    close.className = "card-close";
+    close.textContent = "Close";
+    close.addEventListener("click", function () {
+      hideCard();
+      searchInput.value = "";
+      searchInput.focus();
+    });
+    actions.appendChild(add);
+    actions.appendChild(close);
+
+    cardEl.appendChild(info);
+    cardEl.appendChild(timeWrap);
+    cardEl.appendChild(actions);
+    cardEl.hidden = false;
+
+    card = {
+      city: city, place: place, date: date, rel: rel, time: time, dial: dial, add: add,
+      dateFormat: new Intl.DateTimeFormat(undefined, {
+        timeZone: city.tz, weekday: "long", day: "numeric", month: "long", year: "numeric"
+      })
+    };
+    updateCardButton();
+    tick();
+  }
+
+  function hideCard() {
+    card = null;
+    cardEl.hidden = true;
+    cardEl.innerHTML = "";
+  }
+
+  function updateCardButton() {
+    if (!card) return;
+    var on = isOnList(card.city);
+    card.add.textContent = on ? "On your clocks" : "Add to my clocks";
+    card.add.disabled = on;
+  }
+
+  function updateCard(at, homeOffset, homeDay) {
+    var p = partsAt(card.city.tz, at);
+    var rel = relativeText(card.city, at, homeOffset, homeDay);
+    setTimeEl(card.time, p);
+    card.place.textContent = [cityPlace(card.city), zoneAbbr(card.city.tz, at)].filter(Boolean).join(", ");
+    card.date.textContent = card.dateFormat.format(at);
+    card.rel.textContent = rel.diff.charAt(0).toUpperCase() + rel.diff.slice(1) + ", " + rel.day + " there";
+    var sky = skyAt(p);
+    card.dial.set(p, sky);
+    cardEl.style.setProperty("--sky", "rgb(" + sky.bg.join(",") + ")");
+    cardEl.classList.toggle("is-dark", sky.dark);
   }
 
   // ---------- Controls ----------
@@ -482,32 +872,11 @@
   });
 
   resetBtn.addEventListener("click", function () {
-    chosen = DEFAULT_CITIES.slice();
+    chosen = defaultCities();
     save();
     render();
-    msg.textContent = "City list reset to the default cities.";
-  });
-
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    var typed = input.value.trim();
-    if (!typed) return;
-    var city = byName[fold(typed.split(",")[0])];
-
-    if (!city) {
-      msg.textContent = "No city called “" + typed + "” in the list. Try a capital or a large city nearby.";
-      return;
-    }
-    if (chosen.some(function (n) { return fold(n) === fold(city.name); }) || city === homeCity) {
-      msg.textContent = city.name + " is already on your list.";
-      return;
-    }
-
-    chosen.push(city.name);
-    save();
-    render();
-    input.value = "";
-    msg.textContent = city.name + " added.";
+    updateCardButton();
+    listMsg.textContent = "City list reset to the default cities.";
   });
 
   updateFormatButton();
