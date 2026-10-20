@@ -9,6 +9,10 @@ python3 -m http.server 8787 -d site
 # open http://localhost:8787
 ```
 
+## Main clock list
+
+The cities on the main clock list are set in `site/clocks-config.js`. Visitors can't add or remove clocks; they can only search for any city to see its time. Each visitor's own city is added to their view automatically, marked "(you)".
+
 ## City search
 
 The search bar covers every city and town with 15,000 or more people (about 34,000 places). The list lives in `site/data/cities.json` (about 290 KB compressed), and the page only downloads it when someone starts using the search. Until it arrives, search falls back to the 75 cities built into `app.js`.
@@ -36,7 +40,7 @@ python3 tools/build-cities.py /tmp/gnc/x/geonamescache/data
 | Bottom-right video | `video` | 320×180, 224×126 on phones |
 | Full screen | `interstitial` | Up to 960×640, once per visit |
 
-Until you configure a space, it shows a "This ad space is available" placeholder linking to the Advertise section of `about.html`.
+Until you configure a space, it shows a "This ad space is available" placeholder. To add an "Advertise here" link to placeholders, set `advertiseUrl` in `ad-config.js`.
 
 ### Turning on AdSense
 

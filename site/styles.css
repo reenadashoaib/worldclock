@@ -302,17 +302,6 @@ main { min-width: 0; }
   border-radius: 999px;
   font-weight: 600;
 }
-.card-add {
-  border: 0;
-  background: var(--fg);
-  color: var(--sky);
-}
-.card-add:disabled {
-  cursor: default;
-  background: transparent;
-  color: var(--fg);
-  border: 2px solid currentColor;
-}
 .card-close {
   border: 2px solid currentColor;
   background: transparent;
@@ -513,13 +502,6 @@ main { min-width: 0; }
   border-color: var(--ink);
 }
 
-.list-msg {
-  min-height: 1.5em;
-  margin: 8px 0 16px;
-  color: var(--muted);
-  font-size: var(--step--1);
-}
-
 .city-list {
   list-style: none;
   margin: 0;
@@ -536,7 +518,7 @@ main { min-width: 0; }
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 4px 16px;
-  padding: 14px 60px 14px 20px;
+  padding: 14px 20px;
   background: var(--sky);
   color: var(--fg);
 }
@@ -579,22 +561,6 @@ main { min-width: 0; }
   margin-left: 0.15em;
 }
 
-.city-remove {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 0;
-  background: transparent;
-  color: var(--fg);
-  opacity: 0.8;
-}
-.city-remove:hover { background: rgba(127, 127, 127, 0.22); opacity: 1; }
 
 .list-ad {
   background: var(--ad-bg);

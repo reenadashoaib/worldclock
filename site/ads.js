@@ -109,12 +109,14 @@
     title.textContent = text || "This ad space is available";
     var dims = document.createElement("span");
     dims.textContent = size ? size.w + " × " + size.h : "Full screen";
-    var link = document.createElement("a");
-    link.href = config.advertiseUrl || "/about.html#advertise";
-    link.textContent = "Advertise here";
     box.appendChild(title);
     box.appendChild(dims);
-    box.appendChild(link);
+    if (config.advertiseUrl) {
+      var link = document.createElement("a");
+      link.href = config.advertiseUrl;
+      link.textContent = "Advertise here";
+      box.appendChild(link);
+    }
     return box;
   }
 

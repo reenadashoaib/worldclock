@@ -81,12 +81,6 @@
     ["Auckland", "New Zealand", "Pacific/Auckland"]
   ];
 
-  var DEFAULT_CITIES = [
-    "Los Angeles", "New York", "São Paulo", "London", "Paris", "Lagos",
-    "Dubai", "Mumbai", "Singapore", "Hong Kong", "Tokyo", "Sydney"
-  ];
-
-  var STORE_CITIES = "hourline.cities";
   var STORE_HOURS = "hourline.24h";
   var IN_LIST_AD_AFTER = 5;
 
@@ -241,49 +235,31 @@
     tz: homeTz
   };
 
-  // Saved lists hold city names (older visits and the defaults) or full city objects
-  // (cities added from search).
-  function resolveSaved(entry) {
-    if (typeof entry === "string") return byName[fold(entry)] || null;
-    if (entry && typeof entry.name === "string" && typeof entry.tz === "string" && zoneIsSupported(entry.tz)) {
-      return {
-        name: entry.name,
-        region: typeof entry.region === "string" ? entry.region : "",
-        country: typeof entry.country === "string" ? entry.country : "",
-        tz: entry.tz
-      };
-    }
-    return null;
-  }
-
-  function defaultCities() {
-    return DEFAULT_CITIES.map(resolveSaved).filter(Boolean);
-  }
-
-  function loadChosen() {
-    var saved = null;
-    try { saved = JSON.parse(storageGet(STORE_CITIES)); } catch (e) { saved = null; }
-    if (!Array.isArray(saved)) return defaultCities();
+  // The main clock list is set by the site owner in clocks-config.js. Visitors cannot change it.
+  function loadClocks() {
     var seen = {};
-    return saved.map(resolveSaved).filter(function (c) {
-      if (!c || seen[cityId(c)]) return false;
-      seen[cityId(c)] = true;
+    return (window.HOURLINE_CLOCKS || []).filter(function (c) {
+      if (!c || typeof c.name !== "string" || typeof c.tz !== "string") return false;
+      if (!zoneIsSupported(c.tz)) {
+        console.warn("Hourline: skipping " + c.name + ", unknown time zone " + c.tz);
+        return false;
+      }
+      var id = cityId(c);
+      if (seen[id]) return false;
+      seen[id] = true;
       return true;
+    }).map(function (c) {
+      return { name: c.name, region: c.region || "", country: c.country || "", tz: c.tz };
     });
   }
 
-  var chosen = loadChosen();
+  var clocks = loadClocks();
   var shiftMinutes = 0;
 
   var savedHours = storageGet(STORE_HOURS);
   var use24 = savedHours === null
     ? /^h2/.test(new Intl.DateTimeFormat(undefined, { hour: "numeric" }).resolvedOptions().hourCycle || "h23")
     : savedHours === "1";
-
-  function isOnList(city) {
-    var id = cityId(city);
-    return id === cityId(homeCity) || chosen.some(function (c) { return cityId(c) === id; });
-  }
 
   // ---------- Elements ----------
 
@@ -297,8 +273,6 @@
   var shiftResetEl = document.getElementById("shift-reset");
   var shiftScaleEls = document.querySelectorAll("#shift-scale span");
   var formatBtn = document.getElementById("hour-format");
-  var resetBtn = document.getElementById("reset-list");
-  var listMsg = document.getElementById("list-msg");
   var searchForm = document.getElementById("search-form");
   var searchInput = document.getElementById("city-search");
   var resultsEl = document.getElementById("search-results");
@@ -396,16 +370,6 @@
     li.appendChild(info);
     li.appendChild(time);
 
-    if (!isHome) {
-      var remove = document.createElement("button");
-      remove.type = "button";
-      remove.className = "city-remove";
-      remove.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-      remove.setAttribute("aria-label", "Remove " + city.name);
-      remove.addEventListener("click", function () { removeCity(city); });
-      li.appendChild(remove);
-    }
-
     return { city: city, el: li, where: where, diff: diff, day: day, time: time };
   }
 
@@ -413,7 +377,7 @@
     rows.forEach(function (r) { r.el.remove(); });
 
     var now = new Date();
-    var list = chosen.slice();
+    var list = clocks.slice();
     var homeId = cityId(homeCity);
     if (!list.some(function (c) { return cityId(c) === homeId; })) list.push(homeCity);
 
@@ -431,27 +395,6 @@
     if (window.HourlineAds) window.HourlineAds.fill(listAdSlot);
 
     tick();
-  }
-
-  function save() {
-    storageSet(STORE_CITIES, JSON.stringify(chosen));
-  }
-
-  function addCity(city) {
-    if (isOnList(city)) return false;
-    chosen.push(city);
-    save();
-    render();
-    return true;
-  }
-
-  function removeCity(city) {
-    var id = cityId(city);
-    chosen = chosen.filter(function (c) { return cityId(c) !== id; });
-    save();
-    render();
-    listMsg.textContent = city.name + " removed.";
-    if (card && cityId(card.city) === id) updateCardButton();
   }
 
   // ---------- Clock updates ----------
@@ -771,15 +714,6 @@
 
     var actions = document.createElement("div");
     actions.className = "card-actions";
-    var add = document.createElement("button");
-    add.type = "button";
-    add.className = "card-add";
-    add.addEventListener("click", function () {
-      if (addCity(city)) {
-        listMsg.textContent = city.name + " added to your clocks.";
-        updateCardButton();
-      }
-    });
     var close = document.createElement("button");
     close.type = "button";
     close.className = "card-close";
@@ -789,7 +723,6 @@
       searchInput.value = "";
       searchInput.focus();
     });
-    actions.appendChild(add);
     actions.appendChild(close);
 
     cardEl.appendChild(info);
@@ -798,12 +731,11 @@
     cardEl.hidden = false;
 
     card = {
-      city: city, place: place, date: date, rel: rel, time: time, dial: dial, add: add,
+      city: city, place: place, date: date, rel: rel, time: time, dial: dial,
       dateFormat: new Intl.DateTimeFormat(undefined, {
         timeZone: city.tz, weekday: "long", day: "numeric", month: "long", year: "numeric"
       })
     };
-    updateCardButton();
     tick();
   }
 
@@ -813,12 +745,6 @@
     cardEl.innerHTML = "";
   }
 
-  function updateCardButton() {
-    if (!card) return;
-    var on = isOnList(card.city);
-    card.add.textContent = on ? "On your clocks" : "Add to my clocks";
-    card.add.disabled = on;
-  }
 
   function updateCard(at, homeOffset, homeDay) {
     var p = partsAt(card.city.tz, at);
@@ -871,13 +797,6 @@
     tick();
   });
 
-  resetBtn.addEventListener("click", function () {
-    chosen = defaultCities();
-    save();
-    render();
-    updateCardButton();
-    listMsg.textContent = "City list reset to the default cities.";
-  });
 
   updateFormatButton();
   updateShiftText();

@@ -4,7 +4,7 @@
  * Each ad space can show one of three things, checked in this order:
  *   1. A direct-sold ("house") creative you add under `house` below.
  *   2. A Google AdSense ad, once `adsenseClient` and that space's slot ID are filled in.
- *   3. A placeholder that says the space is available, linking to the Advertise page.
+ *   3. A placeholder that says the space is available.
  *
  * IMPORTANT AdSense policy notes (read before going live):
  *   - Google does not allow AdSense ads inside pop-ups. Keep `slots.interstitial` empty
@@ -37,8 +37,8 @@ window.AD_CONFIG = {
   // Video example:  video: { video: "/ads/acme.mp4", poster: "/ads/acme.jpg", href: "https://acme.example", alt: "Acme" }
   house: {},
 
-  // Where "Advertise here" placeholders link to.
-  advertiseUrl: "/about.html#advertise",
+  // Where an "Advertise here" link in empty spaces should go. Leave empty for no link.
+  advertiseUrl: "",
 
   // Bottom-right video ad.
   videoDock: {
