@@ -784,6 +784,12 @@ body.no-scroll { overflow: hidden; }
 
 /* ---------- Simple content pages ---------- */
 
+/* Text pages (About, Privacy, 404) have no ad columns: one centred column. */
+.text-page .page { grid-template-columns: minmax(0, 1fr); }
+.text-page .page,
+.text-page .site-header,
+.text-page .site-footer { max-width: 1040px; }
+
 .prose {
   max-width: 68ch;
   padding: 24px 0 0;
