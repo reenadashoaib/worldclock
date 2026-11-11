@@ -121,9 +121,37 @@
     return box;
   }
 
+  // A space has something to show when it has a direct-sold creative, or an AdSense slot ID
+  // (never for the full-screen space, where AdSense is not allowed).
+  function hasCreative(name) {
+    if (house[name] && (house[name].image || house[name].video)) return true;
+    return Boolean(client && slots[name] && name !== "interstitial");
+  }
+
+  function hideEmpty() {
+    return config.hideEmptySpaces !== false;
+  }
+
+  // Hides an empty space along with the band, rail or list row around it.
+  function hideSpace(el) {
+    el.dataset.filled = "empty";
+    el.hidden = true;
+    var wrap = el.closest(".ad-band, .rail, .list-ad");
+    if (wrap) wrap.hidden = true;
+    var tiles = el.closest(".tiles");
+    if (tiles && !tiles.querySelector(".ad:not([hidden])")) tiles.hidden = true;
+    document.body.classList.toggle("no-rail-left", Boolean(document.querySelector(".rail-left[hidden]")));
+    document.body.classList.toggle("no-rail-right", Boolean(document.querySelector(".rail-right[hidden]")));
+  }
+
   function fill(el) {
-    if (el.dataset.filled || !isVisible(el)) return;
+    if (el.dataset.filled) return;
     var name = el.dataset.ad;
+    if (hideEmpty() && !hasCreative(name)) {
+      hideSpace(el);
+      return;
+    }
+    if (!isVisible(el)) return;
     var size = el.dataset.size === "fill" ? null : pickSize(el);
     var slotId = slots[name];
 
@@ -166,7 +194,7 @@
 
   function setupVideoDock() {
     var opts = config.videoDock || {};
-    if (opts.enabled === false) return;
+    if (opts.enabled === false || (hideEmpty() && !hasCreative("video"))) return;
 
     var dock = document.createElement("aside");
     dock.className = "video-dock";
@@ -225,6 +253,7 @@
   function setupInterstitial() {
     var opts = config.interstitial || {};
     if (opts.enabled === false || alreadySeenInterstitial()) return;
+    if (hideEmpty() && !hasCreative("interstitial")) return;
 
     var overlay = document.createElement("div");
     overlay.className = "interstitial";

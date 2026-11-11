@@ -40,13 +40,13 @@ python3 tools/build-cities.py /tmp/gnc/x/geonamescache/data
 | Bottom-right video | `video` | 320×180, 224×126 on phones |
 | Full screen | `interstitial` | Up to 960×640, once per visit |
 
-Until you configure a space, it shows a "This ad space is available" placeholder. To add an "Advertise here" link to placeholders, set `advertiseUrl` in `ad-config.js`.
+Until a space has an AdSense slot ID or a direct-sold creative, it is hidden, along with the band or side column around it, and the page closes up. The video and full-screen ads stay off until they have a direct-sold creative. To show "This ad space is available" placeholders instead, set `hideEmptySpaces: false` in `ad-config.js`; `advertiseUrl` adds an "Advertise here" link to them.
 
 ### Turning on AdSense
 
 AdSense is connected with publisher ID `ca-pub-8884353000483064`: Google's snippet is in the `<head>` of every page, `adsenseClient` is set in `site/ad-config.js`, and `site/ads.txt` lists the ID.
 
-To fill the site's own ad spaces with AdSense, create a display ad unit in AdSense for each space and paste its slot ID into `slots` in `site/ad-config.js`. Until then those spaces show placeholders, and Auto ads (if turned on in AdSense) place ads automatically.
+To fill the site's own ad spaces with AdSense, create a display ad unit in AdSense for each space and paste its slot ID into `slots` in `site/ad-config.js`. Until then those spaces stay hidden, and Auto ads (if turned on in AdSense) place ads automatically.
 
 **Policy limits to know before going live:**
 
