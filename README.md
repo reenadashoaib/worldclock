@@ -1,4 +1,4 @@
-# Hourline – world clock
+# Country Time – world clock (countrytime.online)
 
 A static world clock website with built-in ad spaces. Plain HTML, CSS and JavaScript, with no build step. Everything the site serves is in `site/`.
 

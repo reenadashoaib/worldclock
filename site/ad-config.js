@@ -1,5 +1,5 @@
 /*
- * Ad settings for Hourline. This is the only file you need to edit to turn ads on.
+ * Ad settings for Country Time. This is the only file you need to edit to turn ads on.
  *
  * Each ad space can show one of three things, checked in this order:
  *   1. A direct-sold ("house") creative you add under `house` below.

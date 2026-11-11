@@ -241,7 +241,7 @@
     return (window.HOURLINE_CLOCKS || []).filter(function (c) {
       if (!c || typeof c.name !== "string" || typeof c.tz !== "string") return false;
       if (!zoneIsSupported(c.tz)) {
-        console.warn("Hourline: skipping " + c.name + ", unknown time zone " + c.tz);
+        console.warn("Country Time: skipping " + c.name + ", unknown time zone " + c.tz);
         return false;
       }
       var id = cityId(c);

@@ -127,7 +127,7 @@
     var slotId = slots[name];
 
     if (name === "interstitial" && slotId) {
-      console.warn("Hourline ads: AdSense is not allowed in pop-ups, so the full-screen space ignores slots.interstitial. Use a direct-sold creative instead.");
+      console.warn("Country Time ads: AdSense is not allowed in pop-ups, so the full-screen space ignores slots.interstitial. Use a direct-sold creative instead.");
       slotId = "";
     }
 
@@ -141,7 +141,7 @@
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
       } catch (e) {
-        console.warn("Hourline ads: AdSense could not fill " + name, e);
+        console.warn("Country Time ads: AdSense could not fill " + name, e);
       }
     } else {
       el.appendChild(placeholder(size));

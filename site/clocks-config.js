@@ -1,5 +1,5 @@
 /*
- * The cities on Hourline's main clock list. Only this file decides the list: visitors can
+ * The cities on Country Time's main clock list. Only this file decides the list: visitors can
  * search any city to see its time, but they cannot add or remove clocks.
  *
  * Each city needs:
