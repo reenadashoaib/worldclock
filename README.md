@@ -82,4 +82,4 @@ npx wrangler deploy
 
 Or from the dashboard: **Workers & Pages → Create → Import a repository**. Pick this repo, leave the build command empty, and use `npx wrangler deploy` as the deploy command. Each push to the branch you choose then redeploys.
 
-Then add your domain under the Worker's **Settings → Domains & Routes**.
+The site is served at **countrytime.online** and **www.countrytime.online** (custom domains set in `wrangler.jsonc`; the domain's DNS is on Cloudflare, registered at Namecheap). The old `hourline.reenadashoaib.workers.dev` address still works too.
