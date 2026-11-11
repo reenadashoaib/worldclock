@@ -15,7 +15,7 @@
  */
 window.AD_CONFIG = {
   // Your AdSense publisher ID, e.g. "ca-pub-1234567890123456". Leave empty until approved.
-  adsenseClient: "",
+  adsenseClient: "ca-pub-8884353000483064",
 
   // AdSense ad unit IDs (the data-ad-slot number) for each ad space.
   slots: {

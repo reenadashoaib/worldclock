@@ -44,10 +44,9 @@ Until you configure a space, it shows a "This ad space is available" placeholder
 
 ### Turning on AdSense
 
-1. Deploy the site and apply for AdSense with your domain.
-2. In `site/ad-config.js`, set `adsenseClient` to your publisher ID (`ca-pub-…`).
-3. Create a display ad unit in AdSense for each space and paste its slot ID into `slots`.
-4. In `site/ads.txt`, put in your publisher ID and remove the `#` from the last line.
+AdSense is connected with publisher ID `ca-pub-8884353000483064`: Google's snippet is in the `<head>` of every page, `adsenseClient` is set in `site/ad-config.js`, and `site/ads.txt` lists the ID.
+
+To fill the site's own ad spaces with AdSense, create a display ad unit in AdSense for each space and paste its slot ID into `slots` in `site/ad-config.js`. Until then those spaces show placeholders, and Auto ads (if turned on in AdSense) place ads automatically.
 
 **Policy limits to know before going live:**
 

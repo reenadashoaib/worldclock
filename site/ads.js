@@ -13,7 +13,8 @@
   var SMALL_SCREEN = 768;
 
   function loadAdSense() {
-    if (!client || document.querySelector("script[data-adsense]")) return;
+    // Pages already include Google's snippet in <head>; only add it if a page doesn't.
+    if (!client || document.querySelector("script[src*='adsbygoogle.js']")) return;
     var s = document.createElement("script");
     s.async = true;
     s.crossOrigin = "anonymous";
