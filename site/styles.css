@@ -808,6 +808,43 @@ body.no-scroll { overflow: hidden; }
   border-bottom: 1px solid var(--line);
 }
 
+/* ---------- City pages ---------- */
+
+.city-name a {
+  color: inherit;
+  text-decoration: none;
+}
+.city-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.city-now { margin: 4px 0 8px; }
+.city-now-time {
+  margin: 0;
+  font-family: var(--font-clock);
+  font-weight: 800;
+  font-size: clamp(3.5rem, 13vw, 6.5rem);
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+}
+.city-now-date { margin: 6px 0 0; font-size: var(--step-1); }
+.city-now-rel { margin: 2px 0 0; color: var(--muted); }
+
+.city-links {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  columns: 2 240px;
+  column-gap: 32px;
+}
+.city-links li { break-inside: avoid; margin-bottom: 8px; }
+.city-links-time {
+  margin-left: 6px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.facts th { font-weight: 600; width: 40%; }
+.compare td:nth-child(2) { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 @media print {
   .ad, .ad-band, .rail, .video-dock, .interstitial, .tiles { display: none !important; }
 }

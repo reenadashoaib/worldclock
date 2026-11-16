@@ -13,6 +13,16 @@ python3 -m http.server 8787 -d site
 
 The cities on the main clock list are set in `site/clocks-config.js`. Visitors can't add or remove clocks; they can only search for any city to see its time. Each visitor's own city is added to their view automatically, marked "(you)".
 
+## City pages, guides and sitemap
+
+`tools/build-pages.py` generates a page for each city (`site/time/<city>/`), the Cities and Guides index pages, the three guides (written in `tools/guides/`) and `site/sitemap.xml`. Each city's facts and note are in the script; offsets and daylight saving dates come from the time zone database.
+
+Rebuild after changing a city, a guide, or once a year so the pages show the next year's clock-change dates:
+
+```sh
+python3 tools/build-pages.py
+```
+
 ## City search
 
 The search bar covers every city and town with 15,000 or more people (about 34,000 places). The list lives in `site/data/cities.json` (about 290 KB compressed), and the page only downloads it when someone starts using the search. Until it arrives, search falls back to the 75 cities built into `app.js`.

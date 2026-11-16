@@ -249,7 +249,10 @@
       seen[id] = true;
       return true;
     }).map(function (c) {
-      return { name: c.name, region: c.region || "", country: c.country || "", tz: c.tz };
+      return {
+        name: c.name, region: c.region || "", country: c.country || "", tz: c.tz,
+        page: typeof c.page === "string" && c.page.charAt(0) === "/" ? c.page : ""
+      };
     });
   }
 
@@ -352,7 +355,14 @@
     var info = document.createElement("div");
     var name = document.createElement("p");
     name.className = "city-name";
-    name.textContent = city.name;
+    if (city.page) {
+      var link = document.createElement("a");
+      link.href = city.page;
+      link.textContent = city.name;
+      name.appendChild(link);
+    } else {
+      name.textContent = city.name;
+    }
     var meta = document.createElement("p");
     meta.className = "city-meta";
     var where = document.createElement("span");
